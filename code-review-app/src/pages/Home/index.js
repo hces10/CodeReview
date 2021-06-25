@@ -8,18 +8,7 @@ const Home = () => {
 
   const [note, setNote] = useState('');
   const [data, setData] = useState([]);
-  const [textareaFocus, setTextareaFocus] = useState('');
-  const [updateNote, setUpdateNote] = useState('');
 
-  // const refs = useRef([]);
-
-  // useEffect(() => {
-  //   refs.current = refs.current.slice(0, data.length);
-  // }, [data]);
-
-  // useEffect(() => {
-  //   listData();
-  // }, [])
 
   const listData = async () => {
     await api.get(`/notes?email=${currentUser.email}`).then(res => {
@@ -46,7 +35,7 @@ const Home = () => {
   const update = async id => {
     await api.post('/notes/1', {
       id,
-      note: updateNote,
+      note: '',
       email: currentUser.email
     })
       .then(function (response) {
@@ -87,7 +76,7 @@ const Home = () => {
           <button style={{ margin: '25px 0' }} onClick={save}>Salvar</button>
         </div>
         <div style={{ marginLeft: '20px', width: '100%' }}>
-          {data.map((item, index) => {
+          {/* {data.map((item, index) => {
             return (
               <div key={index} style={{
                 border: '1px solid #000', borderRadius: '10px', marginBottom: '20px', display: 'flex',
@@ -117,12 +106,10 @@ const Home = () => {
                         console.log('run update');
                         update(item.idDoc);
                         console.log('idDoc', item.idDoc);
-                        console.log('textareaFocus', textareaFocus);
                       } else {
                         setTextareaFocus(item.idDoc)
                         setUpdateNote(item.note)
                         console.log('idDoc', item.idDoc);
-                        console.log('textareaFocus', textareaFocus);
                       }
                     }}
                   >
@@ -132,7 +119,7 @@ const Home = () => {
               </div>
               </div>
             )
-          })}
+          })} */}
         </div>
 
     </div>
