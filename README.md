@@ -1,2 +1,2 @@
 # CodeReview
-a software to review code until commit.
+A web page to search errors on stack overflow.
