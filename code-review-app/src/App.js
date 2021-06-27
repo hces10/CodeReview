@@ -9,12 +9,10 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div style={{ height: 'auto', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-          <PrivateRoute exact path='/' component={Home} />
-          <Route exact path='/login' component={Login} />
-        </div>
+        <PrivateRoute exact path='/' component={Home} />
+        <Route exact path='/login' component={Login} />
       </Router>
-    </AuthProvider>   
+    </AuthProvider>
   );
 }
 
