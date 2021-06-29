@@ -4,74 +4,51 @@ import { AuthContext } from "../../utils/Auth";
 import api from '../../utils/api';
 import axios from 'axios';
 import styles from './styles.module.css';
+import { IoMdSearch, IoMdSave } from 'react-icons/io';
 
 const Home = () => {
   const { currentUser } = useContext(AuthContext);
 
-  const [note, setNote] = useState('');
-  const [data, setData] = useState([]);
+  const [searchValue, setSearchValue] = useState('');
+  const [dataSearch, setDataSearch] = useState([]);
+  const [clicked, setClicked] = useState(0);
+  const [savedQuestions, setSavedQuestion] = useState([]);
 
-  const getQuestionsAnswers = async () => {
-    await axios.get(`https://api.stackexchange.com/2.2/search/advanced?order=desc&sort=relevance&answers=1&title=404 node&site=stackoverflow&filter=!6W.6dPFG_euye`)
+
+  const search = async () => {
+    if (!searchValue) return;
+    await axios.get(`https://api.stackexchange.com/2.2/search/advanced?pagesize=10&order=desc&sort=relevance&answers=1&title=${searchValue}&site=stackoverflow&filter=!6W.6dPFG_euye`)
       .then(async (response) => {
         console.log('response.data.items', response.data.items);
         const data = response.data.items.map(item => ({
           title: item.title,
           questionId: item.question_id,
           body: item.body,
-          answers: item.answers.map(answer => ({ answerId: answer.answer_id, body: answer.body }))
+          answers: item.answers.map(answer => ({ answerId: answer.answer_id, body: answer.body })),
+          answersChat: [ item.body ].concat(item.answers.map(answer => answer.body ))
         }));
-        setData(data)
-        console.log('data', data);
+        setDataSearch(data);
       }, (error) => {
         console.log(error);
       });
   }
 
   useEffect(() => {
-    getQuestionsAnswers();
+    search();
+    listData();
   }, [])
 
 
   const listData = async () => {
-    await api.get(`/notes?email=${currentUser.email}`).then(res => {
-      console.log(res);
-      setData(res.data)
+    await api.get(`/question?email=${currentUser.email}`).then(res => {
+      setSavedQuestion(res.data.questionData);
     })
       .catch(err => console.log(err))
   }
 
-  const save = async () => {
-    await api.post('/notes', {
-      note,
-      email: currentUser.email
-    })
-      .then(function (response) {
-        console.log(response);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-    await listData();
-  }
-
-  const update = async id => {
-    await api.post('/notes/1', {
-      id,
-      note: '',
-      email: currentUser.email
-    })
-      .then(function (response) {
-        console.log(response);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-    await listData();
-  }
-
-  const erase = async id => {
-    await api.delete(`/notes?email=${currentUser.email}&id=${id}`)
+  const save = async (questionId) => {
+    const question = dataSearch.find(item => item.questionId === questionId);
+    await api.post('/question', { ...question, userEmail: currentUser.email })
       .then(function (response) {
         console.log(response);
       })
@@ -86,47 +63,58 @@ const Home = () => {
       <div className={styles.containerInside}>
         <div className={styles.side}>
           <div className={styles.header}>
-            <div />
-            <span>{currentUser.displayName}</span>
+            <div>
+              <img src={currentUser.photoURL} alt='googleImg' />
+            </div>
+            <div><span onClick={() => app.auth().signOut()}>Sair</span></div>
           </div>
           <div className={styles.containerSearch}>
+            <IoMdSearch onClick={() => search()} />
             <input
-              placeholder="Digite uma busca"
-              value={note}
-              onChange={e => setNote(e.target.value)}
+              placeholder="Search"
+              value={searchValue}
+              onChange={e => setSearchValue(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && search()}
             />
             <div className={styles.divisorInput} />
-            <div className={styles.questions}>
+            <div style={{ height: `${(window.innerHeight - 120)}px` }} className={styles.questions}>
+              {dataSearch.map((item,index) => (
+                <div key={index} className={styles.containerQuestion}>
+                  <div
+                    className={styles.button}
+                    style={{ backgroundColor: clicked === item.questionId ? '#474747' : 'transparent' }}
+                    onClick={() => setClicked(item.questionId)}
+                  >
+                    <h4>{item.title}</h4>
+                    <IoMdSave onClick={() => save(item.questionId)} />
+                  </div>
+                  <div className={styles.divisorHorizontal} />
+                </div>
+              ))}
 
 
-              <a>
-                <h4>Erro 404 - Node JS Api Erro 404 - Node JS Api Erro 404 - Node JS Api Erro 404 - Node JS Api  </h4>
-                <p></p>
-              </a>
               <div className={styles.divisorHorizontal} />
-              <a>
-                <h4>Scroll em div caso seja necessário </h4>
-                <p></p>
-              </a>
-              <div className={styles.divisorHorizontal} />
-              <a>
-                <h4>Erro 404 - Node JS Api Erro 404 - Node JS Api Erro 404 - Node JS Api Erro 404 - Node JS Api  Api Erro 404 - Node JS Api  Api Erro 404 - Node JS Api  </h4>
-                <p></p>
-              </a>
-
-              <div className={styles.divisorHorizontal} />
-              <div className={styles.divisorHorizontal} />
-              <div className={styles.divisorHorizontal} />
-              <p>SAVED QUESTIONS</p>
-              <div className={styles.divisorInput} />
-
-              <a>
-                <h4>Scroll em div caso seja necessário </h4>
-                <p></p>
-              </a>
-              <div className={styles.divisorHorizontal} />
-
-
+              {savedQuestions && savedQuestions.length ? 
+                <>
+                  <div className={styles.divisorHorizontal} />
+                  <div className={styles.divisorHorizontal} />
+                  <p>SAVED QUESTIONS</p>
+                  <div className={styles.divisorInput} />
+                  {savedQuestions.map((item,index) => (
+                    <div key={index}>
+                      <div
+                        className={styles.button}
+                        style={{ backgroundColor: clicked === item.questionId ? '#474747' : 'transparent' }}
+                        onClick={() => setClicked(item.questionId)}
+                      >
+                        <h4>{item.title}</h4>
+                      </div>
+                      <div className={styles.divisorHorizontal} />
+                    </div>
+                  ))}
+                </>
+              : <></>
+              }
             </div>
           </div>
 
@@ -134,87 +122,33 @@ const Home = () => {
         <div className={styles.divisorVertical} />
         <div className={styles.content}>
           <div className={styles.header}>
-            <div />
-            <span>{currentUser.displayName}</span>
+            <nav className={styles.title}>
+              <span>
+                {dataSearch && dataSearch.length && dataSearch.find(item => item.questionId === clicked) ? dataSearch.find(item => item.questionId === clicked).title
+                  : savedQuestions && savedQuestions.length && savedQuestions.find(item => item.questionId === clicked) ? savedQuestions.find(item => item.questionId === clicked).title
+                  : 'Search a question'
+                }
+              </span>
+            </nav>
           </div>
           <div className={styles.answers}>
-            
-            <div className={styles.balloon}>
-              <p>I am making a simple login page in react which should get connected to a database by an ajax call to a node js file.</p>
 
-              <p>This is the node js code that I have:</p>
-
-              <pre><code>var express=require('express');
-                var app=express();
-                var db=require('./db');
-                var bodyParser=require('body-parser');
-                var server=require('http').Server(app);
-                app.set('port',process.env.PORT||8080);
-
-                app.use(bodyParser.json());
-
-                app.set('views','views');
-                app.set('view engine','html');
-
-                app.use(express.static('./public'));
-
-                app.use(bodyParser.urlencoded(
-                extended:true
-                ))
-
-                app.use(express.json());
-                app.use(express.urlencoded());
-
-                app.post('/newuser',function(req,res)
-                console.log(req.body.username);
-                console.log(req.body.password);
-                )
-              </code></pre>
-
-              <p>And the ajax call from the react file looks something like this:</p>
-
-              <pre><code>import React from 'react';
-                import ReactDOM from 'react-dom';
-                import $ from 'jquery';
-                import MusicApp from './music-app.js';
-
-              </code></pre>
-
-              <p>So, when I run the whole code on port number 8080, it gives me a 404 for xhr request not found.
-                The folder structure that I have is something like this:
-              </p>
-
-              <p>What am I missing?</p>
-              "
-            </div>
-
-            <div className={styles.balloon}>
-              <p>So, when I run the whole code on port number 8080, it gives me a 404 for xhr request not found.
-                The folder structure that I have is something like this:
-              </p>
-
-              <p>What am I missing?</p>
-            </div>
-
-            <div className={styles.balloon}>
-              <p>So, when I run the whole code on port number 8080, it gives me a 404 for xhr request not found.
-                The folder structure that I have is something like this:
-              </p>
-
-              <p>What am I missing?</p>
-            </div>
-
-            <div className={styles.balloon}>
-              <p>So, when I run the whole code on port number 8080, it gives me a 404 for xhr request not found.
-                The folder structure that I have is something like this:
-              </p>
-
-              <p>What am I missing?</p>
-            </div>
-            <div className={styles.absolute}>
-            </div>
+            {dataSearch.find(item => item.questionId === clicked) && dataSearch && dataSearch.length ?
+              dataSearch.find(item => item.questionId === clicked).answersChat.map((item,index) => (
+                <div className={styles.balloon} key={index}>
+                  <div dangerouslySetInnerHTML={{ __html: item }} />
+                </div>
+              ))
+            : savedQuestions.find(item => item.questionId === clicked) && savedQuestions && savedQuestions.length ?
+              savedQuestions.find(item => item.questionId === clicked).answersChat.map((item,index) => (
+                <div className={styles.balloon} key={index}>
+                  <div dangerouslySetInnerHTML={{ __html: item }} />
+                </div>
+              ))
+            : <></>
+            }         
+            <div className={styles.absolute} />
           </div>
-          {/* <button variant="primary" onClick={() => app.auth().signOut()}>Sair</button> */}
         </div>
       </div>
     </div>
