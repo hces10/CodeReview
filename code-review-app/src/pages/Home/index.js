@@ -19,7 +19,6 @@ const Home = () => {
     if (!searchValue) return;
     await axios.get(`https://api.stackexchange.com/2.2/search/advanced?pagesize=10&order=desc&sort=relevance&answers=1&title=${searchValue}&site=stackoverflow&filter=!6W.6dPFG_euye`)
       .then(async (response) => {
-        console.log('response.data.items', response.data.items);
         const data = response.data.items.map(item => ({
           title: item.title,
           questionId: item.question_id,
